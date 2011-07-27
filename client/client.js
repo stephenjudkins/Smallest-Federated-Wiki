@@ -11,12 +11,20 @@ $(function() {
 	function be_sortable(pageElement, page_name){
 	  pageElement.find('.story').sortable({
 			update: function(event, ui) {
+			  console.log("==================================================== \n\n");
+        var chunk = $(event.srcElement)
+        var newParent = chunk.parents(".story:first").get(0);
+        var toThisPage = this == newParent;
+        console.log(chunk.data("story"));
+        console.log(chunk);
 				edit = {"type": "move", "order": $(this).children().map(function(key,value){return value.id}).get()};
 				$.ajax({ type: 'PUT', url: '/page/'+page_name+'/edit', data: {'edit': JSON.stringify(edit)}, success: function(){
 					pageElement.find(".journal").prepend('<span class="edit move">m</span>');
 				} });
-		  }
+		  },
+		  connectWith: '.page .story'
 	  });
+	  
 		$( "#sortable" ).disableSelection();
 
 		$('.readout').mousemove(function(e){
@@ -46,13 +54,16 @@ $(function() {
 		$.get('/'+page_name+'/json', '', function(page_json){
 			var empty = {title:"empty",synopsys:"empty",story:[],journal:[]};
 			var page = $.extend(empty, JSON.parse(page_json));
+			var storyDiv = $('<div class="story" />');
 			$(each)
 				.append('<h1><a href="/"><img src = "/favicon.png" height = "32px"></a> ' + page.title + '</h1>')
-				.append('<div class="story" /> <div class="journal" /> <div class="footer" />');
+				.append(storyDiv)
+				.append('<div class="journal" /> <div class="footer" />');
 			$.each(page.story, function(i, item) {
-				var item = page.story[i];
 				var div = $('<div class="'+item.type+'" id="'+item.id+'" />');
 				$(each).children('.story').append(div);
+        // console.log(div);
+				div.data("story", storyDiv.get(0));
 				try {
 					if (item.type == 'paragraph') {
 						div.append('<p>'+resolve_links(item.text)+'</p>');
@@ -68,6 +79,7 @@ $(function() {
 				catch(err) {
 					$('#'+item.id).append('<p>'+err+'</p>');
 				}
+
 			});
 			var journal = $(each).children('.journal');
 			$.each(page.journal.reverse(), function (i, item) {
